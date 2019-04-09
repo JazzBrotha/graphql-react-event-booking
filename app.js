@@ -8,7 +8,12 @@ const graphqlResolvers = require('./api/resolvers/index');
 
 const app = express();
 
+const auth = require('./middleware/auth');
+
 app.use(bodyParser.json());
+
+app.use(auth);
+
 app.use(
   '/api',
   graphqlHttp({
