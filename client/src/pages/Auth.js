@@ -1,17 +1,23 @@
 import React, { Component } from 'react';
 
+import AuthContext from '../context/auth-context';
+
 class AuthPage extends Component {
   state = {
     isLogin: true,
     email: '',
     password: ''
   };
+
+  static contextType = AuthContext;
+
   onChangeHandler = e => {
     const inputField = e.target;
     this.setState({
       [inputField.id]: inputField.value
     });
   };
+
   submitHandler = async e => {
     e.preventDefault();
     const { email, password, isLogin } = this.state;
@@ -53,11 +59,20 @@ class AuthPage extends Component {
         throw new Error('Request failed');
       }
       const parsedResponse = await response.json();
+      const {
+        data: {
+          login: { token, userId, tokenExpiration }
+        }
+      } = parsedResponse;
+      if (token) {
+        this.context.login(token, userId, tokenExpiration);
+      }
       console.log(parsedResponse);
     } catch (err) {
       console.log(err);
     }
   };
+
   switchModeHandler = () => {
     this.setState(prevState => {
       return { isLogin: !prevState.isLogin };
@@ -68,7 +83,7 @@ class AuthPage extends Component {
     const { onChangeHandler, submitHandler, switchModeHandler } = this;
     const { isLogin } = this.state;
     return (
-      <form style={{ marginTop: 100 }} onSubmit={submitHandler}>
+      <form onSubmit={submitHandler}>
         <div className="form-control">
           <label htmlFor="email">Email</label>
           <input onChange={onChangeHandler} type="email" id="email" />
