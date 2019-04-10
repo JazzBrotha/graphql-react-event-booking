@@ -4,7 +4,7 @@ import AuthPage from './pages/Auth';
 import EventsPage from './pages/Events';
 import BookingsPage from './pages/Bookings';
 import MainNavigation from './components/Navigation/MainNavigation';
-import AuthContext from './context/auth-context';
+import AuthContext from './context/AuthContext';
 
 class App extends Component {
   state = {
@@ -35,12 +35,12 @@ class App extends Component {
             <MainNavigation />
             <main>
               <Switch>
-                {!token && <Redirect from="/" to="/auth" exact />}
                 {token && <Redirect from="/" to="/events" exact />}
                 {token && <Redirect from="/auth" to="/events" exact />}
                 {!token && <Route path="/auth" component={AuthPage} />}
                 <Route path="/events" component={EventsPage} />
                 {token && <Route path="/bookings" component={BookingsPage} />}
+                {!token && <Redirect to="/auth" />}
               </Switch>
             </main>
           </AuthContext.Provider>
