@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import Modal from '../components/Modal/Modal';
 import AuthContext from '../context/AuthContext';
+import EventList from '../components/Event/EventList';
 
 class EventsPage extends Component {
   state = {
@@ -9,7 +10,9 @@ class EventsPage extends Component {
     price: '',
     date: '',
     description: '',
-    events: []
+    events: [],
+    isLoading: false,
+    selectedEvent: null
   };
 
   static contextType = AuthContext;
@@ -35,7 +38,8 @@ class EventsPage extends Component {
 
   handleCancelEvent = () => {
     this.setState({
-      isModalOpen: false
+      isModalOpen: false,
+      selectedEvent: null
     });
   };
 
@@ -46,8 +50,10 @@ class EventsPage extends Component {
     });
   };
 
+  bookEventHandler = () => {};
+
   createEvent = async e => {
-    const { title, description, price, date, events } = this.state;
+    const { title, description, price, date } = this.state;
     const requestBody = {
       query: `
           mutation {
@@ -82,8 +88,8 @@ class EventsPage extends Component {
       const {
         data: { createEvent }
       } = parsedResponse;
-      this.setState({
-        events: [...events, createEvent]
+      this.setState(({ events }) => {
+        return { events: [...events, createEvent] };
       });
     } catch (err) {
       console.log(err);
@@ -91,6 +97,9 @@ class EventsPage extends Component {
   };
 
   fetchEvents = async () => {
+    this.setState({
+      isLoading: true
+    });
     const requestBody = {
       query: `
           query {
@@ -124,11 +133,22 @@ class EventsPage extends Component {
         data: { events }
       } = parsedResponse;
       this.setState({
-        events
+        events,
+        isLoading: false
       });
     } catch (err) {
       console.log(err);
+      this.setState({
+        isLoading: false
+      });
     }
+  };
+
+  showDetailHandler = eventId => {
+    this.setState(({ events }) => {
+      const selectedEvent = events.find(event => event._id === eventId);
+      return { selectedEvent };
+    });
   };
 
   render() {
@@ -136,13 +156,12 @@ class EventsPage extends Component {
       openModal,
       handleCancelEvent,
       handleConfirmEvent,
-      onChangeHandler
+      onChangeHandler,
+      showDetailHandler,
+      bookEventHandler
     } = this;
-    const { isModalOpen, events } = this.state;
-    const { token } = this.context;
-    const eventList = events.map(event => {
-      return <li key={event._id}>{event.title}</li>;
-    });
+    const { isModalOpen, events, isLoading, selectedEvent } = this.state;
+    const { token, userId } = this.context;
     return (
       <>
         {isModalOpen && (
@@ -151,7 +170,8 @@ class EventsPage extends Component {
             canConfirm
             canCancel
             onCancel={handleCancelEvent}
-            onConfirm={handleConfirmEvent}
+            onConfirm={bookEventHandler}
+            confirmText="Confirm"
           >
             <form>
               <div className="form-control">
@@ -178,13 +198,39 @@ class EventsPage extends Component {
             </form>
           </Modal>
         )}
+        {selectedEvent && (
+          <Modal
+            title={selectedEvent.title}
+            canConfirm
+            canCancel
+            onCancel={handleCancelEvent}
+            onConfirm={handleConfirmEvent}
+            confirmText="Book"
+          >
+            <div>
+              <h1>{selectedEvent.title}</h1>
+              <h2>{selectedEvent.price}</h2>
+              <h2>{new Date(selectedEvent.date).toLocaleDateString()}</h2>
+              <p>{selectedEvent.description}</p>
+            </div>
+          </Modal>
+        )}
+
         {token && (
           <div className="events-control">
             <p>Share your own events! </p>
             <button onClick={openModal}>Create Event</button>
           </div>
         )}
-        <ul>{eventList}</ul>
+        {isLoading ? (
+          <p>Loading...</p>
+        ) : (
+          <EventList
+            events={events}
+            authUserId={userId}
+            onViewDetail={showDetailHandler}
+          />
+        )}
       </>
     );
   }
