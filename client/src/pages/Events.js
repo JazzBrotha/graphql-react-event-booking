@@ -50,7 +50,48 @@ class EventsPage extends Component {
     });
   };
 
-  bookEventHandler = () => {};
+  bookEventHandler = async () => {
+    const { selectedEvent } = this.state;
+    const { token } = this.context;
+    if (!token) {
+      this.setState({
+        selectedEvent: null
+      });
+      return;
+    }
+    const requestBody = {
+      query: `
+          mutation {
+            bookEvent(eventId: "${selectedEvent._id}") {
+              _id
+              createdAt
+              updatedAt
+            }
+          }
+          `
+    };
+    try {
+      const { token } = this.context;
+      const response = await fetch('http://localhost:8000/api', {
+        method: 'POST',
+        body: JSON.stringify(requestBody),
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        }
+      });
+      if (response.status !== 200 && response.status !== 201) {
+        throw new Error('Request failed');
+      }
+      const parsedResponse = await response.json();
+      console.log(parsedResponse);
+      this.setState({
+        selectedEvent: null
+      });
+    } catch (err) {
+      console.log(err);
+    }
+  };
 
   createEvent = async e => {
     const { title, description, price, date } = this.state;
@@ -170,7 +211,7 @@ class EventsPage extends Component {
             canConfirm
             canCancel
             onCancel={handleCancelEvent}
-            onConfirm={bookEventHandler}
+            onConfirm={handleConfirmEvent}
             confirmText="Confirm"
           >
             <form>
@@ -204,8 +245,8 @@ class EventsPage extends Component {
             canConfirm
             canCancel
             onCancel={handleCancelEvent}
-            onConfirm={handleConfirmEvent}
-            confirmText="Book"
+            onConfirm={bookEventHandler}
+            confirmText={token ? 'Book' : 'Confirm'}
           >
             <div>
               <h1>{selectedEvent.title}</h1>
