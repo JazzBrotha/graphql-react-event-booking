@@ -14,7 +14,7 @@ const MainNavigation = props => (
           <ul>
             {!token && (
               <li>
-                <NavLink to="/auth">Login</NavLink>
+                <NavLink to="/auth">Authenticate</NavLink>
               </li>
             )}
             <li>
